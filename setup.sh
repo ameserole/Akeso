@@ -7,8 +7,8 @@ sudo apt install -y python-pip docker.io
 
 sudo pip install virtualenv
 
-virtualenv defense_venv
-source defense_venv/bin/activate
+virtualenv akeso_venv
+source akeso_venv/bin/activate
 
 pip install -r requirements.txt
 

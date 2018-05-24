@@ -1,3 +1,5 @@
 docker
 pika
 structlog
+pytest
+mock

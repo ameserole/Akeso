@@ -1,2 +1,6 @@
 *.pyc
 *.swp
+.tox
+.pytest_cache
+*venv
+MANIFEST

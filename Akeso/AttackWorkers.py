@@ -13,14 +13,15 @@ def challenge_mapper(challenge):
     return {
         'maze': ('maze', 'mazeAttack', 'maze', 31337),
         'SQL': ('sqlisimple', 'SQLi', 'SQLiSimple', 80),
-        'shell': ('shell', 'shellAttack', 'shell', 4001),        
+        'shell': ('shell', 'shellAttack', 'shell', 4001),
     }[challenge]
+
 
 def attackCallback(ch, method, properties, body):
     """Pull service off of attack queue and run selected attack against it"""
 
-    credentials = pika.PlainCredentials('guest', 'guest')
-    parameters = pika.ConnectionParameters(config.RABBITMQ_SERVER)
+#    credentials = pika.PlainCredentials('guest', 'guest')
+#    parameters = pika.ConnectionParameters(config.RABBITMQ_SERVER)
 
     connection2 = pika.BlockingConnection(pika.ConnectionParameters(config.RABBITMQ_SERVER))
     resultChannel = connection2.channel()
@@ -30,11 +31,10 @@ def attackCallback(ch, method, properties, body):
     body = json.loads(body)
     info = challenge_mapper(body['chal'])
 
-    try:
+    if 'serviceName' in body:
         serviceName = body['serviceName']
-    except:
+    else:
         serviceName = None
-   
 
     s = {
         'serviceName': serviceName,
@@ -66,7 +66,6 @@ def attackCallback(ch, method, properties, body):
     else:
         log.info('attackCallback', msg="Service Check Failed")
         userMsg = "Service Check Failed"
-        logs = "failed"
         resultChannel.basic_publish(exchange='resultX',
                                     routing_key=str(service.userInfo),
                                     body=json.dumps({'msg': userMsg, 'service': service.__dict__}))
@@ -86,7 +85,7 @@ def attackCallback(ch, method, properties, body):
         log.info("attackCallback", msg="Exploit Success")
         resultChannel.basic_publish(exchange='resultX',
                                     routing_key=str(service.userInfo),
-                                    body=json.dumps({'msg': userMsg,  'service': service.__dict__}))
+                                    body=json.dumps({'msg': userMsg, 'service': service.__dict__}))
 
         ch.basic_ack(delivery_tag=method.delivery_tag)
         return -1
@@ -110,7 +109,6 @@ def attackCallback(ch, method, properties, body):
     elif not exploitSuccess and not checkService:
         log.info('attackCallback', msg="Service Check Failed After Attack")
         userMsg = "Service Check Failed After Attack"
-        logs = "failed2"
         resultChannel.basic_publish(exchange='resultX',
                                     routing_key=str(service.userInfo),
                                     body=json.dumps({'msg': userMsg, 'service': service.__dict__}))
@@ -124,7 +122,7 @@ def attackCallback(ch, method, properties, body):
 
 def attackWorker():
     """Declare attack queue and callback function"""
-    credentials = pika.PlainCredentials('guest', 'guest')
+#    credentials = pika.PlainCredentials('guest', 'guest')
     parameters = pika.ConnectionParameters(config.RABBITMQ_SERVER)
 
     connection = pika.BlockingConnection(parameters)

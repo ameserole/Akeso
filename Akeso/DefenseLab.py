@@ -1,7 +1,6 @@
 import structlog
 import time
 import config
-from Services.BuildImages import buildAllImages
 from AttackWorkers import startAttackWorkers
 
 

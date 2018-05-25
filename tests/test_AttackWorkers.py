@@ -1,6 +1,7 @@
 import mock
 import pytest
 import json
+import pika
 from Akeso.AttackWorkers import attackCallback # NOQA
 
 
@@ -49,24 +50,23 @@ def fake_module():
     (False, False, {'msg': 'Service Check Failed', 'logs': 'logs', 'display': 'logs'})
 ])
 def test_attackCallback(service_ret, exploit_ret, expected_message, fake_ch, fake_method, fake_service, fake_module):
-    with mock.patch('pika.channel.Channel.basic_publish') as pikaPub, \
-            mock.patch('importlib.import_module') as importMod:#, \
-#            mock.patch('Akeso.AttackWorkers.cleanup') as fakeClean:
-        pikaPub.return_value = None
+    with mock.patch.object(pika, 'BlockingConnection') as pikaBlock, \
+            mock.patch('importlib.import_module') as importMod:
+
+        pikaBlock.return_value = mock.Mock()
+
         importMod.return_value = fake_module(service_ret, exploit_ret)
-#        fakeClean.return_value = None
 
         ch = fake_ch
         method = fake_method
         properties = ""
-        body = json.dumps(fake_service.__dict__)
+        body = json.dumps({'chal': 'SQL', 'userInfo': '1', 'serviceHost': '127.0.0.1'})
         expected_message['service'] = fake_service.__dict__
         attackCallback(ch, method, properties, body)
 
-        pikaPub.assert_called_with(exchange='resultX',
-                                   routing_key=str(fake_service.userInfo),
-                                   body=json.dumps(expected_message),
-                                   immediate=False,
-                                   mandatory=False,
-                                   properties=None)
-        print expected_message
+        pikaBlock.mock_calls[-1].assert_called_with(exchange='resultX',
+                                                    routing_key=str(fake_service.userInfo),
+                                                    body=json.dumps(expected_message),
+                                                    immediate=False,
+                                                    mandatory=False,
+                                                    properties=None)

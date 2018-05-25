@@ -51,3 +51,11 @@ def fake_container():
 
     return container()
 
+
+@pytest.fixture
+def fake_blocking_conn():
+    class blocking_conn:
+        def channel(self):
+            pass
+
+    return blocking_conn()

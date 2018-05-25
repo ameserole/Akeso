@@ -1,6 +1,4 @@
 from Akeso.ServiceManager import ServiceInfo
-import mock
-import docker
 
 
 def test_ServiceInfo():
@@ -15,4 +13,3 @@ def test_ServiceInfo():
 
     service = ServiceInfo(fakeInfo)
     assert service.__dict__ == fakeInfo
-

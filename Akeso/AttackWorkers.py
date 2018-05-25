@@ -20,9 +20,6 @@ def challenge_mapper(challenge):
 def attackCallback(ch, method, properties, body):
     """Pull service off of attack queue and run selected attack against it"""
 
-#    credentials = pika.PlainCredentials('guest', 'guest')
-#    parameters = pika.ConnectionParameters(config.RABBITMQ_SERVER)
-
     connection2 = pika.BlockingConnection(pika.ConnectionParameters(config.RABBITMQ_SERVER))
     resultChannel = connection2.channel()
     resultChannel.exchange_declare(exchange='resultX', exchange_type='direct')

@@ -1,5 +1,7 @@
 # Secure Coding/Config Lab
 
+[![Build Status](https://travis-ci.org/ameserole/Akeso.svg?branch=master)](https://travis-ci.org/ameserole/Akeso)
+
 A Platform for Testing Secure Coding/Config  
   
 The goal of this project is to test users abilities to find and fix vulnerabilities in code within a CTF style framework.  

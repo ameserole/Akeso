@@ -10,6 +10,6 @@ class ServiceInfo(object):
         self.imageName = info['imageName']
         self.serviceHost = info['serviceHost']
         self.servicePort = info['servicePort']
-        self.exploitModule = info['exploitModule']
-        self.serviceCheckName = info['serviceCheckName']
+        self.exploitModules = info['exploitModules']
+        self.serviceCheckNames = info['serviceCheckNames']
         self.userInfo = info['userInfo']

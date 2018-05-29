@@ -55,6 +55,8 @@ The suggested installation for runners is:
 `sudo gitlab-runner register --url "<url>" --registration-token "<token>" --description "runner" --executor "docker" --docker-image ubuntu:latest`  
 and when prompted `Whether to lock Runner to current project [true/false]:` respond with `false`.  
 
+To allow for more than one runner to run at a time modify the value of `concurrent = 1` in the  
+`/etc/gitlab-runner/config.toml` file to the number of concurrent runners you are willing to have.
 
 ### Integrating with CTFd
 Integrating `Gitlab` with CTFd is relatively easy and can make the users experience more seamless. Gitlab comes with an API interface for adding and editing users: https://docs.gitlab.com/ce/api/users.html. Including a python module http://python-gitlab.readthedocs.io/en/stable/gl_objects/users.html.  

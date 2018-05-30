@@ -7,8 +7,8 @@ def test_ServiceInfo():
         'imageName': 'fakeImage',
         'serviceHost': '127.0.0.1',
         'servicePort': 80,
-        'exploitModule': 'fakeExploit',
-        'serviceCheckName': 'fakeCheck',
+        'exploitModules': ['fakeExploit'],
+        'serviceCheckNames': ['fakeCheck'],
         'userInfo': 'fakeInfo'}
 
     service = ServiceInfo(fakeInfo)

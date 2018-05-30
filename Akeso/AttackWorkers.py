@@ -9,14 +9,6 @@ from ServiceManager import ServiceInfo
 logger = structlog.get_logger()
 
 
-def challenge_mapper(challenge):
-    return {
-        'maze': ('maze', 'mazeAttack', 'maze', 31337),
-        'SQL': ('sqlisimple', 'SQLi', 'SQLiSimple', 80),
-        'shell': ('shell', 'shellAttack', 'shell', 4001),
-    }[challenge]
-
-
 def attackCallback(ch, method, properties, body):
     """Pull service off of attack queue and run selected attack against it"""
 
@@ -26,7 +18,7 @@ def attackCallback(ch, method, properties, body):
     resultChannel.queue_declare(queue='resultQueue', durable=True)
 
     body = json.loads(body)
-    info = challenge_mapper(body['chal'])
+    info = config.challenge_mapper(body['chal'])
 
     if 'serviceName' in body:
         serviceName = body['serviceName']
@@ -37,8 +29,8 @@ def attackCallback(ch, method, properties, body):
         'serviceName': serviceName,
         'imageName': info[0],
         'userInfo': body['userInfo'],
-        'exploitModule': info[1],
-        'serviceCheckName': info[2],
+        'exploitModules': info[1],
+        'serviceCheckNames': info[2],
         'serviceHost': body['serviceHost'],
         'servicePort': info[3]
     }
@@ -51,48 +43,69 @@ def attackCallback(ch, method, properties, body):
 
     log = logger.bind(service=service.__dict__)
     userMsg = "Starting Attack on {} {}\n".format(service.imageName, service.userInfo)
+    for serviceCheckName in service.serviceCheckNames:
+        # Get the Service module for this service and check that it is running correctly
+        serviceCheckModuleName = 'Services.' + serviceCheckName + '.' + serviceCheckName
+        serviceModule = importlib.import_module(serviceCheckModuleName, package=None)
+        serviceCheckObject = serviceModule.ServiceCheck(service)
 
-    # Get the Service module for this service and check that it is running correctly
-    serviceCheckModuleName = 'Services.' + service.serviceCheckName + '.' + service.serviceCheckName
-    serviceModule = importlib.import_module(serviceCheckModuleName, package=None)
-    serviceCheckObject = serviceModule.ServiceCheck(service)
+        if serviceCheckObject.checkService():
+            log.info('attackCallback', msg="Service Check Succeeded")
+            userMsg = "Service Check Succeeded"
+        else:
+            log.info('attackCallback', msg="Service Check Failed")
+            userMsg = "Service Check Failed"
+            resultChannel.basic_publish(exchange='resultX',
+                                        routing_key=str(service.userInfo),
+                                        body=json.dumps({'msg': userMsg, 'service': service.__dict__}))
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+            return -1
 
-    if serviceCheckObject.checkService():
-        log.info('attackCallback', msg="Service Check Succeeded")
-        userMsg = "Service Check Succeeded"
-    else:
-        log.info('attackCallback', msg="Service Check Failed")
-        userMsg = "Service Check Failed"
-        resultChannel.basic_publish(exchange='resultX',
-                                    routing_key=str(service.userInfo),
-                                    body=json.dumps({'msg': userMsg, 'service': service.__dict__}))
-        ch.basic_ack(delivery_tag=method.delivery_tag)
-        return -1
+    for exploitModule in service.exploitModules:
+        # If the service is running correctly grab the selected exploit module and run it against the current service
+        exploitModuleName = 'Exploits.' + exploitModule
+        exploitModule = importlib.import_module(exploitModuleName, package=None)
+        exploitObject = exploitModule.Exploit(service)
+        exploitObject.exploit()
 
-    # If the service is running correctly grab the selected exploit module and run it against the current service
-    exploitModuleName = 'Exploits.' + service.exploitModule
-    exploitModule = importlib.import_module(exploitModuleName, package=None)
-    exploitObject = exploitModule.Exploit(service)
-    exploitObject.exploit()
+        exploitSuccess = exploitObject.exploitSuccess()
 
-    exploitSuccess = exploitObject.exploitSuccess()
+        if exploitSuccess:
+            userMsg = "Your Code/Config was exploited."
+            log.info("attackCallback", msg="Exploit Success")
+            resultChannel.basic_publish(exchange='resultX',
+                                        routing_key=str(service.userInfo),
+                                        body=json.dumps({'msg': userMsg, 'service': service.__dict__}))
 
-    if exploitSuccess:
-        userMsg = "Your Code/Config was exploited."
-        log.info("attackCallback", msg="Exploit Success")
-        resultChannel.basic_publish(exchange='resultX',
-                                    routing_key=str(service.userInfo),
-                                    body=json.dumps({'msg': userMsg, 'service': service.__dict__}))
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+            return -1
 
-        ch.basic_ack(delivery_tag=method.delivery_tag)
-        return -1
-
-    else:
-        userMsg = "Attack Failed"
-        log.info("attackCallback", msg=userMsg)
+        else:
+            userMsg = "Attack Failed"
+            log.info("attackCallback", msg=userMsg)
 
     # Check to see if the service is still up after the exploit was run
-    checkService = serviceCheckObject.checkService()
+    # checkService = serviceCheckObject.checkService()
+
+    checkService = False
+    for serviceCheckName in service.serviceCheckNames:
+        # Get the Service module for this service and check that it is running correctly
+        serviceCheckModuleName = 'Services.' + serviceCheckName + '.' + serviceCheckName
+        serviceModule = importlib.import_module(serviceCheckModuleName, package=None)
+        serviceCheckObject = serviceModule.ServiceCheck(service)
+
+        checkService = serviceCheckObject.checkService()
+        if checkService:
+            log.info('attackCallback', msg="Service Check Succeeded")
+            userMsg = "Service Check Succeeded"
+        else:
+            log.info('attackCallback', msg="Service Check Failed After Attack")
+            userMsg = "Service Check Failed"
+            resultChannel.basic_publish(exchange='resultX',
+                                        routing_key=str(service.userInfo),
+                                        body=json.dumps({'msg': userMsg, 'service': service.__dict__}))
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+            return -1
 
     # If Service is still up and exploit did not work return the flag to the user
     if not exploitSuccess and checkService:
@@ -101,17 +114,6 @@ def attackCallback(ch, method, properties, body):
         resultChannel.basic_publish(exchange='resultX',
                                     routing_key=str(service.userInfo),
                                     body=json.dumps({'msg': userMsg, 'service': service.__dict__}))
-
-    # No flag for you :(
-    elif not exploitSuccess and not checkService:
-        log.info('attackCallback', msg="Service Check Failed After Attack")
-        userMsg = "Service Check Failed After Attack"
-        resultChannel.basic_publish(exchange='resultX',
-                                    routing_key=str(service.userInfo),
-                                    body=json.dumps({'msg': userMsg, 'service': service.__dict__}))
-
-        ch.basic_ack(delivery_tag=method.delivery_tag)
-        return -1
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
     return 1

@@ -10,8 +10,8 @@ def fake_service():
         'volumeLocation': 'fakeVolume',
         'serviceHost': '127.0.0.1',
         'servicePort': 80,
-        'exploitModule': 'fakeExploit',
-        'serviceCheckName': 'fakeCheck',
+        'exploitModules': ['fakeExploit'],
+        'serviceCheckNames': ['fakeCheck'],
         'userInfo': '1'}
 
     return ServiceInfo(fakeInfo)

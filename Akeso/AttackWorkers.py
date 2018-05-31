@@ -45,7 +45,7 @@ def attackCallback(ch, method, properties, body):
     userMsg = "Starting Attack on {} {}\n".format(service.imageName, service.userInfo)
     for serviceCheckName in service.serviceCheckNames:
         # Get the Service module for this service and check that it is running correctly
-        serviceCheckModuleName = 'Services.' + serviceCheckName + '.' + serviceCheckName
+        serviceCheckModuleName = 'Akeso.Services.' + serviceCheckName + '.' + serviceCheckName
         serviceModule = importlib.import_module(serviceCheckModuleName, package=None)
         serviceCheckObject = serviceModule.ServiceCheck(service)
 
@@ -63,7 +63,7 @@ def attackCallback(ch, method, properties, body):
 
     for exploitModule in service.exploitModules:
         # If the service is running correctly grab the selected exploit module and run it against the current service
-        exploitModuleName = 'Exploits.' + exploitModule
+        exploitModuleName = 'Akeso.Exploits.' + exploitModule
         exploitModule = importlib.import_module(exploitModuleName, package=None)
         exploitObject = exploitModule.Exploit(service)
         exploitObject.exploit()
@@ -90,7 +90,7 @@ def attackCallback(ch, method, properties, body):
     checkService = False
     for serviceCheckName in service.serviceCheckNames:
         # Get the Service module for this service and check that it is running correctly
-        serviceCheckModuleName = 'Services.' + serviceCheckName + '.' + serviceCheckName
+        serviceCheckModuleName = 'Akeso.Services.' + serviceCheckName + '.' + serviceCheckName
         serviceModule = importlib.import_module(serviceCheckModuleName, package=None)
         serviceCheckObject = serviceModule.ServiceCheck(service)
 

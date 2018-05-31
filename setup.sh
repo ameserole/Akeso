@@ -13,12 +13,12 @@ source akeso_venv/bin/activate
 pip install -r requirements.txt
 
 if id -nG "$USER" | grep -qw "docker"; then
-    echo "Execute start.sh to bring everything online."
+    echo "User AkesoCLI.py to bring the backend up."
 else
     echo "Adding $USER to docker group"
     getent group docker || sudo groupadd docker
     sudo usermod -a -G docker $USER
-    echo "Please relogin before starting the Defense Lab"
+    echo "Please relogin before starting up Akeso"
     exit
 fi
 

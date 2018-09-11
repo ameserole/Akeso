@@ -1,0 +1,7 @@
+image: tamuctf/maze:latest
+
+test:
+  script:
+    - "pwd"
+    - "ls"
+    - "./tests/entry.sh"

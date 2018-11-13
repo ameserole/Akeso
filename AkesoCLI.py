@@ -18,6 +18,10 @@ def start_rabbitmq_container():
     client = docker.from_env()
     try:
         rabbit = client.containers.get('shell-rabbit')
+        if "exited" in rabbit.status:
+            rabbit.start()
+            time.sleep(10)
+
     except docker.errors.NotFound:
         client.containers.run(image='rabbitmq:latest', detach=True, hostname='shell-rabbit', name='shell-rabbit')
         time.sleep(10)

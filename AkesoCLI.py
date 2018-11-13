@@ -1,11 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 import argparse
-import docker
+from Akeso import config
 import time
 import os
-from Akeso import config
-
 
 def activate_venv():
     # https://www.a2hosting.com/kb/developer-corner/python/activating-a-python-virtual-environment-from-a-script-file
@@ -16,6 +14,7 @@ def activate_venv():
 
 
 def start_rabbitmq_container():
+    import docker
     client = docker.from_env()
     try:
         rabbit = client.containers.get('shell-rabbit')
@@ -37,6 +36,7 @@ def main():
         config.NUM_ATTACK_WORKERS = args.attack_workers
 
     activate_venv()
+
     start_rabbitmq_container()
 
     from Akeso import DefenseLab  # NOQA
